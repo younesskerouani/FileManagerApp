@@ -7,49 +7,41 @@ import path from 'path';
 import fs from 'fs';
 
 export default async function handler(req, res) {
- 
-  const { type, filePath } = req.query; // Retrieve the file path from the query parameter
+      if (session) {
+      const { type, filePath } = req.query; // Retrieve the file path from the query parameter
 
-  const basePath = process.env.BASE_PATH;
+      const basePath = process.env.BASE_PATH;
+      
 
-  try {
+      try {
 
-    const session = await getSession({ req });
-    // let user = null;
+        const session = await getSession({ req });
+      if(session){
+          const fullPath = join(basePath, filePath); 
+          const stats = statSync(fullPath);
+          // Check if the file exists
+          await fsPromises.access(fullPath);
 
-    // if (!session) {
-    //   const usersFilePath = path.join(process.env.AUTH_PATH, 'users.json');
-    //   const users = JSON.parse(fs.readFileSync(usersFilePath, 'utf-8'));
+          const fileName = basename(fullPath); 
+          console.log(fileName);
 
-    //   user = checkUser(req, res, users);
+          const mimeType = mime.getType(fileName) || 'application/octet-stream';
 
-    //   if (!user) {
-    //     return res.status(401).send('Unauthorized');
-    //   }
-    // }
-  if(session){
-      const fullPath = join(basePath, filePath); // Update the path accordingly
-      const stats = statSync(fullPath);
-      // Check if the file exists
-      await fsPromises.access(fullPath);
+          // Set appropriate headers for the file download
+          res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+          res.setHeader('Content-Type', mimeType);
+          res.setHeader('Content-Length', stats.size.toString());
 
-      const fileName = basename(fullPath); // Use basename from path module
-      console.log(fileName);
+          // Stream the file to the response
+          const readStream = createReadStream(fullPath);
+          readStream.pipe(res);
+      }
 
-      const mimeType = mime.getType(fileName) || 'application/octet-stream';
-
-      // Set appropriate headers for the file download
-      res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Length', stats.size.toString());
-
-      // Stream the file to the response
-      const readStream = createReadStream(fullPath);
-      readStream.pipe(res);
-   }
-
-  } catch (error) {
-    console.error('Error downloading the file:', error);
-    res.status(500).send('Error downloading the file');
-  }
+      } catch (error) {
+        console.error('Error downloading the file:', error);
+        res.status(500).send('Error downloading the file');
+      }
+    }else{
+      return res.status(401).send('Unauthorized');
+    }
 }

@@ -10,14 +10,11 @@ const secret = process.env.NEXTAUTH_SECRET
 export default async function handler(req, res) {
  
   const token = await getToken({ req, secret })
-  console.log("JSON Web Token", token)
+  // console.log("JSON Web Token", token)
 
   try { 
 
     const session = await getSession({ req });
-    // if (!session) {
-    //   return res.status(401).json({ error: 'Unauthorized' });
-    // }
 
     const basePath = process.env.BASE_PATH; 
     const dynamicPath = req.query.path || ''; 

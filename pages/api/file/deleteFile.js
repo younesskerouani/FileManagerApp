@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 import { join } from 'path';
 import { getSession } from "next-auth/react";
 
@@ -7,27 +6,22 @@ import { getSession } from "next-auth/react";
 export default async function handler(req, res) {
   const session = await getSession({ req });
 
-    // if (!session) {
-    //   return res.status(401).json({ error: 'Unauthorized' });
-    // }
+    //  if (session) {
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+      const { fileName } = req.body; 
+      const basePath = process.env.BASE_PATH;
+      const { filePath } = req.query;
+      const targetDirectory = join(basePath, filePath);
+      const targetPath = join(targetDirectory, fileName);
 
-  const { fileName } = req.body; 
-  const basePath = process.env.BASE_PATH;
-  const { filePath } = req.query;
+      try {
 
-  const targetDirectory = join(basePath, filePath);
-  const targetPath = join(targetDirectory, fileName);
+        await fs.promises.unlink(targetPath);
+        return res.status(200).json({ message: 'File deleted successfully' });
 
-  try {
-    await fs.promises.unlink(targetPath);
-
-    return res.status(200).json({ message: 'File deleted successfully' });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'File deletion failed' });
-  }
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'File deletion failed' });
+      }
+//  }
 }
